@@ -7,9 +7,11 @@ def findPort(val):
     type = val[0:3]
 
     if (type == "COM"):
+        # windows only
         return val[0:5]
     else:
-        pass
+        # mac os / linux
+        return val[0:20]
 
 
 def portSelection():
@@ -46,7 +48,6 @@ data = []
 
 dataType = input("Tipo di valore che vuoi registrare?\n")
 
-
 totalRead = nCount = getNumberOfData()
 typePort = portSelection()
 
@@ -58,7 +59,7 @@ serialInst.baudrate = 9600
 serialInst.port = typePort
 serialInst.open()
 
-print("\nElenco dati estrapolati:")
+print("\nElenco dati estrapolati:\n")
 
 while True:
     if serialInst.in_waiting:
@@ -115,9 +116,9 @@ print("Somma : " + str(somma))
 media = int(somma / (6*totalRead))
 print("Media : " + str(media))
 
-f = open("sensorsData_" + str(dataType) + ".json", "w")
-f.write(str(json.dumps(data)))
-f.close()
+j = open("sensorsData_" + str(dataType) + ".json", "w")
+j.write(str(json.dumps(data)))
+j.close()
 
 d = open("calcolo_" + str(dataType) + ".txt", "w")
 d.write(
