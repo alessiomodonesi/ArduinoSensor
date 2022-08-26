@@ -44,12 +44,32 @@ def getNumberOfData():
             print("\nInserisci un valore numerico intero")
 
 
+def getSenAvailable():
+    while 1:
+        availableSensors = [0, 1, 2, 3, 4, 5]
+        r = input(
+            "\nInserisci il numero corrispondente dei sensori separati da una virgola\n")
+        try:
+            rSens = r.split(',')
+            for i in range(len(rSens)):
+                rSens[i] = int(rSens[i])
+                availableSensors.remove(rSens[i])
+            break
+        except:
+            print(
+                "\nValore non corretto\nOppure hai inserito il valore dello stesso sensore più di una volta")
+
+    # print(rSens)
+    return rSens
+
+
 data = []
 
 dataType = input("Tipo di valore che vuoi registrare?\n")
 
 totalRead = nCount = getNumberOfData()
 typePort = portSelection()
+# nSensors = getSenAvailable()
 
 serialInst = serial.Serial()
 
