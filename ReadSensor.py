@@ -1,28 +1,54 @@
 import serial
 import json
-import time
-from datetime import timedelta
 import serial.tools.list_ports
+
+
+def findPort(val):
+    type = val[0:3]
+
+    if (type == "COM"):
+        return val[0:5]
+    else:
+        pass
+
+
+def portSelection():
+    print("\nElenco porte utilizzabili:")
+    ports = serial.tools.list_ports.comports()
+    portList = []
+
+    # mostra tutte le porte utilizzabili
+    i = 0
+    for onePort in ports:
+        portList.append(str(onePort))
+        print(str(i) + " -> " + str(onePort))
+        i += 1
+
+    while 1:
+        index = input("\nSeleziona la porta da usare\n")
+        index = int(index)
+        try:
+            return findPort(str(portList[index]))
+        except:
+            print("\nPorta non trovata")
+
+
+def getNumberOfData():
+    while 1:
+        n = input("\nInserisci il numero di righe di dati che vuoi prendere\n")
+        try:
+            return int(n)
+        except:
+            print("\nInserisci un valore numerico intero")
+
 
 data = []
 
 dataType = input("Tipo di valore che vuoi registrare?\n")
-# print(dataType)
-nCount = input("\nInserisci il numero di righe di dati che vuoi prendere\n")
 
-print("\nElenco porte utilizzabili:")
-ports = serial.tools.list_ports.comports()
-serialInst = serial.Serial()
-portList = []
 
-for onePort in ports:
-    portList.append(str(onePort))
-    print(str(onePort))
-
-typePort = input("\nSeleziona la porta da usare\n")
-
-nCount = int(nCount)
-totalRead = nCount
+totalRead = nCount = getNumberOfData()
+typePort = portSelection()
 
 serialInst = serial.Serial()
 
