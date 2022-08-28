@@ -1,6 +1,11 @@
+from numpy import random
 import serial
+import os
 import json
 import serial.tools.list_ports
+from typing import Final
+
+DEBUG: Final[int] = 0
 
 
 def findPort(val):
@@ -28,8 +33,8 @@ def portSelection():
 
     while 1:
         index = input("\nSeleziona la porta da usare\n")
-        index = int(index)
         try:
+            index = int(index)
             return findPort(str(portList[index]))
         except:
             print("\nPorta non trovata")
@@ -49,18 +54,32 @@ def getSenAvailable():
         availableSensors = [0, 1, 2, 3, 4, 5]
         r = input(
             "\nInserisci il numero corrispondente dei sensori separati da una virgola\n")
-        try:
-            rSens = r.split(',')
-            for i in range(len(rSens)):
-                rSens[i] = int(rSens[i])
-                availableSensors.remove(rSens[i])
+        if (r.lower() == "all"):
+            rSens = availableSensors
             break
-        except:
-            print(
-                "\nValore non corretto\nOppure hai inserito il valore dello stesso sensore più di una volta")
+        else:
+            try:
+                rSens = r.split(',')
+                for i in range(len(rSens)):
+                    rSens[i] = int(rSens[i])
+                    availableSensors.remove(rSens[i])
+                break
+            except:
+                print(
+                    "\nValore non corretto\nOppure hai inserito il valore dello stesso sensore più di una volta")
 
     # print(rSens)
     return rSens
+
+
+def getRandomValue():
+    # generate some integers
+    value = random.randint(196, 516, size=(len(sensToRead)))
+    value = value.tolist()
+
+    print(value)
+    # print(type(value))
+    return value
 
 
 data = []
@@ -68,36 +87,46 @@ data = []
 dataType = input("Tipo di valore che vuoi registrare?\n")
 
 totalRead = nCount = getNumberOfData()
-typePort = portSelection()
-# nSensors = getSenAvailable()
+sensToRead = getSenAvailable()
 
-serialInst = serial.Serial()
+if (DEBUG == 0):
+    typePort = portSelection()
 
-serialInst.baudrate = 9600
-# serialInst.port = "COM3"
-# serialInst.port = "/dev/cu.usbmodem1101"
-serialInst.port = typePort
-serialInst.open()
+    serialInst = serial.Serial()
+
+    serialInst.baudrate = 9600
+    # serialInst.port = "COM3"
+    # serialInst.port = "/dev/cu.usbmodem1101"
+    serialInst.port = typePort
+    serialInst.open()
 
 print("\nElenco dati estrapolati:\n")
 
 while True:
-    if serialInst.in_waiting:
-        packet = serialInst.readline()
-        serial_line = packet.decode('utf').rstrip('\n')
-        try:
-            line = json.loads(serial_line)
-            print(line)
-            data.append(line)
-            nCount -= 1
-            if nCount % 10 == 0:
-                print("\nData left: " + str(nCount) + "\n")
-        except:
-            pass
+    if (DEBUG == 0):
+        if serialInst.in_waiting:
+            packet = serialInst.readline()
+            serial_line = packet.decode('utf').rstrip('\n')
+            try:
+                line = json.loads(serial_line)
+                print(line)
+                data.append(line)
+                nCount -= 1
+                if nCount % 10 == 0:
+                    print("\nData left: " + str(nCount) + "\n")
+            except:
+                pass
+    else:
+        data.append(getRandomValue())
+        nCount -= 1
+        if nCount % 10 == 0:
+            print("\nData left: " + str(nCount) + "\n")
+
     if nCount == 0:
         break
 
-serialInst.close()
+if (DEBUG == 0):
+    serialInst.close()
 # print(data)
 
 sommaSingleCol = {
@@ -112,19 +141,12 @@ mediaSingleCol = {
 }
 
 for i in range(len(data)):
-    sommaSingleCol["sen0"] += int(data[i][0])
-    sommaSingleCol["sen1"] += int(data[i][1])
-    sommaSingleCol["sen2"] += int(data[i][2])
-    sommaSingleCol["sen3"] += int(data[i][3])
-    sommaSingleCol["sen4"] += int(data[i][4])
-    sommaSingleCol["sen5"] += int(data[i][5])
+    for j in range(len(data[i])):
+        sommaSingleCol["sen" + str(j)] += int(data[i][j])
 
-mediaSingleCol["sen0"] = int(sommaSingleCol["sen0"] / totalRead)
-mediaSingleCol["sen1"] = int(sommaSingleCol["sen1"] / totalRead)
-mediaSingleCol["sen2"] = int(sommaSingleCol["sen2"] / totalRead)
-mediaSingleCol["sen3"] = int(sommaSingleCol["sen3"] / totalRead)
-mediaSingleCol["sen4"] = int(sommaSingleCol["sen4"] / totalRead)
-mediaSingleCol["sen5"] = int(sommaSingleCol["sen5"] / totalRead)
+for i in range(len(data[0])):
+    mediaSingleCol["sen" +
+                   str(i)] = int(sommaSingleCol["sen" + str(i)] / totalRead)
 
 somma = 0
 media = 0
@@ -136,11 +158,15 @@ print("Somma : " + str(somma))
 media = int(somma / (6*totalRead))
 print("Media : " + str(media))
 
-j = open("sensorsData_" + str(dataType) + ".json", "w")
+# crea le cartelle
+os.makedirs("calc", exist_ok=True)
+os.makedirs("data", exist_ok=True)
+
+j = open("data/sensorsData_" + str(dataType) + ".json", "w")
 j.write(str(json.dumps(data)))
 j.close()
 
-d = open("calcolo_" + str(dataType) + ".txt", "w")
+d = open("calc/calcolo_" + str(dataType) + ".txt", "w")
 d.write(
     "Somma Totale: " + str(somma) + "\n" +
     "Media Totale: " + str(media) + "\n\n" +
