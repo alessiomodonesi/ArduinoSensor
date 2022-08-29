@@ -6,6 +6,7 @@ import serial.tools.list_ports
 from typing import Final
 
 DEBUG: Final[int] = 0
+ARDUINO: Final[str] = "ArduinoMkr1310"
 
 
 def findPort(val):
@@ -82,6 +83,13 @@ def getRandomValue():
     return value
 
 
+def formatData(array):
+    for i in range(len(array)):
+        array[i] = json.loads(array[i])
+    print("Formatting completed")
+    return array
+
+
 data = []
 
 dataType = input("Tipo di valore che vuoi registrare?\n")
@@ -109,9 +117,10 @@ while True:
             serial_line = packet.decode('utf').rstrip('\n')
             try:
                 line = json.loads(serial_line)
-                print(line)
-                data.append(line)
-                nCount -= 1
+                print(serial_line)
+                if (len(line) == len(sensToRead)):
+                    data.append(line)
+                    nCount -= 1
                 if nCount % 10 == 0:
                     print("\nData left: " + str(nCount) + "\n")
             except:
@@ -127,6 +136,7 @@ while True:
 
 if (DEBUG == 0):
     serialInst.close()
+    # data = formatData(data)
 # print(data)
 
 sommaSingleCol = {
@@ -141,12 +151,14 @@ mediaSingleCol = {
 }
 
 for i in range(len(data)):
-    for j in range(len(data[i])):
-        sommaSingleCol["sen" + str(j)] += int(data[i][j])
+    for j in range(len(sensToRead)):
+        sommaSingleCol["sen" +
+                       str(sensToRead[j])] += int(data[i][sensToRead[j]])
 
-for i in range(len(data[0])):
+for i in range(len(sensToRead)):
     mediaSingleCol["sen" +
-                   str(i)] = int(sommaSingleCol["sen" + str(i)] / totalRead)
+                   str(sensToRead[i])] = int(sommaSingleCol[
+                       "sen" + str(sensToRead[i])] / totalRead)
 
 somma = 0
 media = 0
@@ -155,18 +167,19 @@ somma = sommaSingleCol["sen0"] + sommaSingleCol["sen1"] + sommaSingleCol["sen2"]
     sommaSingleCol["sen3"] + sommaSingleCol["sen4"] + sommaSingleCol["sen5"]
 
 print("Somma : " + str(somma))
-media = int(somma / (6*totalRead))
+media = int(somma / (len(sensToRead)*totalRead))
 print("Media : " + str(media))
 
 # crea le cartelle
-os.makedirs("calc", exist_ok=True)
-os.makedirs("data", exist_ok=True)
+os.makedirs(ARDUINO + "/calc", exist_ok=True)
+os.makedirs(ARDUINO + "/data", exist_ok=True)
 
-j = open("data/sensorsData_" + str(dataType) + ".json", "w")
+
+j = open(ARDUINO + "/data/sensorsData_" + str(dataType) + ".json", "w")
 j.write(str(json.dumps(data)))
 j.close()
 
-d = open("calc/calcolo_" + str(dataType) + ".txt", "w")
+d = open(ARDUINO + "/calc/calcolo_" + str(dataType) + ".txt", "w")
 d.write(
     "Somma Totale: " + str(somma) + "\n" +
     "Media Totale: " + str(media) + "\n\n" +

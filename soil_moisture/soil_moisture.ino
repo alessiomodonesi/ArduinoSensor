@@ -69,7 +69,7 @@ void writeSensorValJson() {
     //int percentuale = map(sensorVal, wet, dry, 100, 0); // converto un range di valori in percentuale
     writeArray(sensorVal, i);
   }
-  delay(100); // delay tra un rilevamento e l'altro
+  delay(10); // delay tra un rilevamento e l'altro
 }
 
 //write the value as an array in the terminal
