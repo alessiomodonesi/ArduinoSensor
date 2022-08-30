@@ -1,87 +1,101 @@
 //Alessio Modonesi, Mattia Zanini
-//Righe di codice per il funzionamento del sensore di umidità
+//Codice per il funzionamento del sensore di umidità
 
+#define WAITING_TIME 5000
 #define ARRAY_SIZE(array) ((sizeof(array))/(sizeof(array[0]))) // determina la lunghezza di un array
 
-// valori da ricalibrare per per ogni board e in ogni condizione del sensore
-/*
-  Sensore A0, wet = 197;
-  Sensore A0, dry = 503;
-
-  Sensore A1, wet = 207;
-  Sensore A1, dry = 516;
-
-  Sensore A2, wet = 195;
-  Sensore A2, dry = 502;
-
-  Sensore A3, wet = 207;
-  Sensore A3, dry = 515;
-
-  Sensore A4, wet = 208;
-  Sensore A4, dry = 515;
-
-  Sensore A5, wet = 202;
-  Sensore A5, dry = 511;
-*/
-
 //media tra i vari valori
-const int dry = 510; // 0% di umidità
-const int wet = 203; // 100% di umidità
+const int dry = 668; // 0% di umidità
+const int wet = 306; // 100% di umidità
 const byte sensori[] = {A0, A1, A2, A3, A4, A5}; //contiene tutti i pin analogici della scheda
+
+bool stillChecking = true;
+bool notConnected;
+unsigned long sentMs;//timer per verificare la connessione
 
 void setup() {
   Serial.begin(9600); // imposta il canale di trasmissione a 9600 bts (baud)
+  setupCheckUSB();
+  Serial.println("Booting...");
 }
 
 void loop() {
-  writeSensorValJson();
+  checkUSB();
+  if (!stillChecking)
+    ReadSensors();
+}
+
+//inizializza il controllo del collegamento con lo script
+void setupCheckUSB() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  blinkLed(1);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1500);
+  sentMs = millis();
+}
+
+//verifica se l'arduino è collegato al pc (tramite lo script)
+void checkUSB() {
+  if (stillChecking) {
+    if (millis() - sentMs > WAITING_TIME) {
+      if (!Serial.available()) {
+        //NO USB
+        notConnected = true;
+      } else {
+        //USB CONNECTED
+        digitalWrite(LED_BUILTIN, HIGH);
+        notConnected = false;
+      }
+
+      stillChecking = false;
+      Serial.println(!notConnected);
+
+      if (!notConnected == true) {
+        //USB CONNECTED
+        blinkLed(3);
+      }
+      else {
+        //NO USB
+        blinkLed(2);
+        digitalWrite(LED_BUILTIN, LOW);
+      }
+    }
+  }
 }
 
 // legge serialmente tutti i 6 sensori connessi all'arduino
-void readMultiSensors() {
-  for (int i = 0; i < ARRAY_SIZE(sensori); i++) {
-    int sensorVal = analogRead(sensori[i]); //lettura analogica del singolo canale
-
-    /*
-      Serial.print("Sensore ");
-      Serial.print(i);
-      Serial.print(" : ");
-      Serial.println(sensorVal);
-    */
-
-    //
-    int percentuale = map(sensorVal, wet, dry, 100, 0); // converto un range di valori in percentuale
-    Serial.print("Sensore ");
-    Serial.print(i);
-    Serial.print(" : ");
-    Serial.print(percentuale);
-    Serial.println("%");
-    //
-    writeArray(percentuale, i);
-  }
-  Serial.println(); // per staccare i vecchi valori da quelli nuovi
-  delay(2500); // delay tra un rilevamento e l'altro
-}
-
-void writeSensorValJson() {
+void ReadSensors() {
   for (int i = 0; i < ARRAY_SIZE(sensori); i++) {
     int sensorVal = analogRead(sensori[i]); //lettura analogica del singolo canale
     //int percentuale = map(sensorVal, wet, dry, 100, 0); // converto un range di valori in percentuale
-    writeArray(sensorVal, i);
+    WriteArray(sensorVal, i);
   }
-  delay(10); // delay tra un rilevamento e l'altro
+  delay(50); // delay tra un rilevamento e l'altro
 }
 
 //write the value as an array in the terminal
-void writeArray(int sVal, int n) {
+void WriteArray(int sVal, int n) {
+  // per aprire l'array
   if (n == 0) {
     Serial.print("[");
   }
+  // valori al centro dell'array
   Serial.print(sVal);
   if (n != ARRAY_SIZE(sensori) - 1) {
     Serial.print(",");
   }
+  // per chiudere l'array
   if (n == ARRAY_SIZE(sensori) - 1) {
-    Serial.println("]");// per staccare i vecchi valori da quelli nuovi
+    Serial.println("]");
+  }
+}
+
+//fa lampeggiare il led predefinito per un certo numero di volte
+void blinkLed(int n) {
+  for (int i = 0; i < n; i++) {
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(1000);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(1000);
   }
 }

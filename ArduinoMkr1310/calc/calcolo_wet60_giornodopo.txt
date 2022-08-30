@@ -1,0 +1,16 @@
+Somma Totale: 20647853
+Media Totale: 344
+
+Somma A0: 3576379
+Somma A1: 3604092
+Somma A2: 3152765
+Somma A3: 3838061
+Somma A4: 3310276
+Somma A5: 3166280
+
+Media A0: 357
+Media A1: 360
+Media A2: 315
+Media A3: 383
+Media A4: 331
+Media A5: 316

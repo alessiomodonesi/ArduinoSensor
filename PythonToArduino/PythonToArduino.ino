@@ -7,8 +7,8 @@ unsigned long sentMs;
 void setup() {
   Serial.begin(9600);
   setupCheckUSB();
-  //Serial.println("Answer!");
-  /*
+  Serial.println("Booting...");
+  /*xxx
     while (!Serial.available());
     x = Serial.readString().toInt();
     Serial.print(x + 1);
@@ -20,8 +20,8 @@ void loop() {
 }
 
 void setupCheckUSB() {
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
   sentMs = millis();
 }
 
@@ -39,7 +39,7 @@ void checkUSB() {
 
         //USB CONNECTED
 
-        digitalWrite(13, HIGH);
+        digitalWrite(LED_BUILTIN, HIGH);
         notConnected = false;
         /*
           Serial.println("I see you.");
@@ -58,7 +58,7 @@ void checkUSB() {
       else {
         //NO USB
         blinkLed(2);
-        digitalWrite(13, LOW);
+        digitalWrite(LED_BUILTIN, LOW);
       }
     }
   }
@@ -66,9 +66,9 @@ void checkUSB() {
 
 void blinkLed(int n) {
   for (int i = 0; i < n; i++) {
-    digitalWrite(13, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
     delay(1000);
-    digitalWrite(13, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(1000);
   }
 }

@@ -1,3 +1,4 @@
+import time
 from numpy import random
 import serial
 import json
@@ -5,21 +6,25 @@ import json
 import serial.tools.list_ports as serial_ports
 from typing import Final
 
-DEBUG: Final[int] = 0
+DEBUG: Final[int] = 1
 
 """
 1- controllare se ci sono arduino collegati
 2- se ce ne sono, faccio segliere, quando ce ne è uno solo selezione quello
 3- instauro una connessione con l'arduino (invio e ricevo)
-4- nome dei file
+4- (NO) nome dei file
 5- quanti dati da leggere
 6- porte da selezionare
 7- lettura dati
+
+self.result = self.ReadArduinoData(
+            self.serialInst, len(self.sensToRead), self.nCount)
+
 8- elaborazione dati
 """
 
 
-class ArduinoConnection:
+class SoilMoistureSensor:
     def __init__(self):
         self.result = None
         self.ports = None
@@ -35,15 +40,60 @@ class ArduinoConnection:
             print("Non c'è nessun dispositivo collegato!\nCollega un Arduino e riprova")
             return
         self.portSelected = self.PortSelection(self.ports)
-        self.Connection(9600, self.portSelected)
 
-    def Connection(self, baud, port):
-        self.serialInst.baudrate = baud
-        self.serialInst.port = port
-        self.serialInst.open()
+        conn = self.Connection(self.serialInst, 9600, self.portSelected)
+        if (conn == 0):
+            print("Connessione non riuscita")
+            return
+        print("Connessione stabilita")
+
+        self.totalRead = self.nCount = self.NumberOfData()
+        self.sensToRead = self.SenAvailable()
+        self.result = self.ReadArduinoData(
+            self.serialInst, len(self.sensToRead), self.nCount)
+
+        return 0
+
+    def Connection(self, inst, baud, port):
+
+        def write_read(msg):
+            inst.write(bytes(msg, 'utf-8'))
+            time.sleep(0.05)
+            data = inst.readline()
+            line = data.decode('utf').rstrip('\n')
+            return int(line)
+
+        inst.baudrate = baud
+        inst.port = port
+        inst.open()
+
+        time.sleep(0.5)
+        value = 0
+        while True:
+            if inst.in_waiting:
+                fl_data = inst.readline()
+                f_line = fl_data.decode('utf').rstrip('\r\n')
+                # print(f_line)
+                if (f_line == "Booting..."):
+                    break
+                else:
+                    inst.close()
+                    return value
+
+        time.sleep(0.5)
+        value = write_read("hello world")
+        # print(value)
+        inst.close()
+        return value
 
     def GetPortsNumber(self):
         return serial_ports.comports()
+
+    def GetResults(self):
+        return self.result
+
+    def GetUsedSensors(self):
+        return self.sensToRead
 
     def PortSelection(self, ports):
         print("\nElenco porte utilizzabili:")
@@ -63,6 +113,8 @@ class ArduinoConnection:
                 except:
                     print("\nPorta non trovata")
         else:
+            print(
+                "\nSelezionata in automatico l'unica porta disponibile\n")
             return self.FindPort(str(portList[0]))
 
     def FindPort(self, val):
@@ -75,7 +127,7 @@ class ArduinoConnection:
             # mac os / linux
             return val[0:20]
 
-    def GetNumberOfData(self):
+    def NumberOfData(self):
         while 1:
             n = input(
                 "\nInserisci il numero di righe di dati che vuoi prendere\n")
@@ -84,9 +136,12 @@ class ArduinoConnection:
             except:
                 print("\nInserisci un valore numerico intero")
 
-    def GetSenAvailable(self):
+    def SenAvailable(self):
+        if (DEBUG == 1):
+            return [0, 1, 2, 3, 4, 5]
         while 1:
             availableSensors = [0, 1, 2, 3, 4, 5]
+
             r = input(
                 "\nInserisci il numero corrispondente dei sensori separati da una virgola\n")
             if (r.lower() == "all"):
@@ -104,10 +159,35 @@ class ArduinoConnection:
                         "\nValore non corretto\nOppure hai inserito il valore dello stesso sensore più di una volta")
         return rSens
 
-    # sens ---> sensToRead
-    def GetRandomValue(self, sens):
+    def ReadArduinoData(self, inst, nSens, n):
+        inst.open()
+        data = []
+        print("\nElenco dati estrapolati:\n")
+        while True:
+            if inst.in_waiting:
+                packet = inst.readline()
+                serial_line = packet.decode('utf').rstrip('\n')
+                try:
+                    line = json.loads(serial_line)
+                    print(serial_line)
+                    if (len(line) == nSens):
+                        data.append(line)
+                        n -= 1
+                    if n % 10 == 0:
+                        print("\nData left: " + str(n) + "\n")
+                except:
+                    pass
+
+            if n == 0:
+                break
+
+        inst.close()
+        return data
+
+    # nSens ---> len(sensToRead)
+    def RandomValue(self, nSens):
         # generate some integers
-        value = random.randint(196, 516, size=(len(sens)))
+        value = random.randint(196, 516, size=(nSens))
         value = value.tolist()
 
         print(value)
