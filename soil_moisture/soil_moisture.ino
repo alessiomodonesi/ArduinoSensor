@@ -67,8 +67,8 @@ void checkUSB() {
 void ReadSensors() {
   for (int i = 0; i < ARRAY_SIZE(sensori); i++) {
     int sensorVal = analogRead(sensori[i]); //lettura analogica del singolo canale
-    //int percentuale = map(sensorVal, wet, dry, 100, 0); // converto un range di valori in percentuale
-    WriteArray(sensorVal, i);
+    int percentuale = map(sensorVal, wet, dry, 100, 0); // converto un range di valori in percentuale
+    WriteArray(percentuale, i);
   }
   delay(50); // delay tra un rilevamento e l'altro
 }
