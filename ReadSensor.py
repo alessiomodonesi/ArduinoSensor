@@ -3,10 +3,11 @@ import json
 from typing import Final
 from moistureSensor import SoilMoistureSensor
 
+# Nome del dispositivo (per creare una cartella separata)
 ARDUINO: Final[str] = "ArduinoMkr1310"
 
-
 mSensor = SoilMoistureSensor()
+# se ci sono stati degli errori durante l'esecuzione il programma termina
 if (mSensor.Start() == None):
     exit()
 
@@ -16,12 +17,12 @@ data = mSensor.GetResults()
 nData = len(data)
 sensorsUsed = mSensor.GetUsedSensors()
 
-sommaSingleCol = {
+sommaSensori = {
     "sen0": 0, "sen1": 0,
     "sen2": 0, "sen3": 0,
     "sen4": 0, "sen5": 0
 }
-mediaSingleCol = {
+mediaSensori = {
     "sen0": 0, "sen1": 0,
     "sen2": 0, "sen3": 0,
     "sen4": 0, "sen5": 0
@@ -29,23 +30,22 @@ mediaSingleCol = {
 
 for i in range(len(data)):
     for j in range(len(sensorsUsed)):
-        sommaSingleCol["sen" +
-                       str(sensorsUsed[j])] += int(data[i][sensorsUsed[j]])
+        sommaSensori["sen" +
+                     str(sensorsUsed[j])] += int(data[i][sensorsUsed[j]])
 
 for i in range(len(sensorsUsed)):
-    mediaSingleCol["sen" +
-                   str(sensorsUsed[i])] = int(sommaSingleCol[
-                       "sen" + str(sensorsUsed[i])] / nData)
+    mediaSensori["sen" + str(sensorsUsed[i])] = int(sommaSensori[
+        "sen" + str(sensorsUsed[i])] / nData)
 
-somma = 0
-media = 0
+sommaTot = 0
+mediaTot = 0
 
-somma = sommaSingleCol["sen0"] + sommaSingleCol["sen1"] + sommaSingleCol["sen2"] + \
-    sommaSingleCol["sen3"] + sommaSingleCol["sen4"] + sommaSingleCol["sen5"]
+sommaTot = sommaSensori["sen0"] + sommaSensori["sen1"] + sommaSensori["sen2"] + \
+    sommaSensori["sen3"] + sommaSensori["sen4"] + sommaSensori["sen5"]
 
-print("Somma : " + str(somma))
-media = int(somma / (len(sensorsUsed)*nData))
-print("Media : " + str(media))
+print("Somma : " + str(sommaTot))
+mediaTot = int(sommaTot / (len(sensorsUsed)*nData))
+print("Media : " + str(mediaTot))
 
 # crea le cartelle
 os.makedirs(ARDUINO + "/calc", exist_ok=True)
@@ -58,22 +58,22 @@ j.close()
 
 d = open(ARDUINO + "/calc/calcolo_" + str(filename) + ".txt", "w")
 d.write(
-    "Somma Totale: " + str(somma) + "\n" +
-    "Media Totale: " + str(media) + "\n\n" +
+    "Somma Totale: " + str(sommaTot) + "\n" +
+    "Media Totale: " + str(mediaTot) + "\n\n" +
 
-    "Somma A0: " + str(sommaSingleCol["sen0"]) + "\n" +
-    "Somma A1: " + str(sommaSingleCol["sen1"]) + "\n" +
-    "Somma A2: " + str(sommaSingleCol["sen2"]) + "\n" +
-    "Somma A3: " + str(sommaSingleCol["sen3"]) + "\n" +
-    "Somma A4: " + str(sommaSingleCol["sen4"]) + "\n" +
-    "Somma A5: " + str(sommaSingleCol["sen5"]) + "\n\n" +
+    "Somma A0: " + str(sommaSensori["sen0"]) + "\n" +
+    "Somma A1: " + str(sommaSensori["sen1"]) + "\n" +
+    "Somma A2: " + str(sommaSensori["sen2"]) + "\n" +
+    "Somma A3: " + str(sommaSensori["sen3"]) + "\n" +
+    "Somma A4: " + str(sommaSensori["sen4"]) + "\n" +
+    "Somma A5: " + str(sommaSensori["sen5"]) + "\n\n" +
 
-    "Media A0: " + str(mediaSingleCol["sen0"]) + "\n" +
-    "Media A1: " + str(mediaSingleCol["sen1"]) + "\n" +
-    "Media A2: " + str(mediaSingleCol["sen2"]) + "\n" +
-    "Media A3: " + str(mediaSingleCol["sen3"]) + "\n" +
-    "Media A4: " + str(mediaSingleCol["sen4"]) + "\n" +
-    "Media A5: " + str(mediaSingleCol["sen5"]) + "\n"
+    "Media A0: " + str(mediaSensori["sen0"]) + "\n" +
+    "Media A1: " + str(mediaSensori["sen1"]) + "\n" +
+    "Media A2: " + str(mediaSensori["sen2"]) + "\n" +
+    "Media A3: " + str(mediaSensori["sen3"]) + "\n" +
+    "Media A4: " + str(mediaSensori["sen4"]) + "\n" +
+    "Media A5: " + str(mediaSensori["sen5"]) + "\n"
 )
 
 d.close()

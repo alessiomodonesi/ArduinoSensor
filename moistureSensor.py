@@ -1,8 +1,7 @@
 import time
-from numpy import random
+# from numpy import random
 import serial
 import json
-# import serial.tools.list_ports
 import serial.tools.list_ports as serial_ports
 from typing import Final
 
@@ -12,16 +11,13 @@ DEBUG: Final[int] = 1
 1- controllare se ci sono arduino collegati
 2- se ce ne sono, faccio segliere, quando ce ne è uno solo selezione quello
 3- instauro una connessione con l'arduino (invio e ricevo)
-4- (NO) nome dei file
-5- quanti dati da leggere
-6- porte da selezionare
-7- lettura dati
-
-self.result = self.ReadArduinoData(
-            self.serialInst, len(self.sensToRead), self.nCount)
-
-8- elaborazione dati
+4- quanti dati da leggere
+5- porte da selezionare
+6- lettura dati
 """
+
+# classe per gestire il rilevamente dati da parte di un arduino
+# con installati dei sensori di umidità del terreno
 
 
 class SoilMoistureSensor:
@@ -54,6 +50,7 @@ class SoilMoistureSensor:
 
         return 0
 
+    # verifica la connessione con l'arduino
     def Connection(self, inst, baud, port):
 
         def write_read(msg):
@@ -86,15 +83,21 @@ class SoilMoistureSensor:
         inst.close()
         return value
 
+    # ritorna il numero di arduino connessi al pc
     def GetPortsNumber(self):
         return serial_ports.comports()
 
+    # ritorna il risultato dei dati raccolti
     def GetResults(self):
         return self.result
 
+    # ritorna un array con i sensori che sono stati usati dall'arduino
     def GetUsedSensors(self):
         return self.sensToRead
 
+    # permette di scegliere la porta sulla quale
+    # interfacciarsi con l'arduino nel caso ci sia solo un arduino connesso
+    # verrà automaticamente scelta l'unica porta disponibile
     def PortSelection(self, ports):
         print("\nElenco porte utilizzabili:")
         portList = []
@@ -117,6 +120,7 @@ class SoilMoistureSensor:
                 "\nSelezionata in automatico l'unica porta disponibile\n")
             return self.FindPort(str(portList[0]))
 
+    # ritorna il nome della porta, cambia a seconda del sistema operativo
     def FindPort(self, val):
         type = val[0:3]
 
@@ -127,6 +131,7 @@ class SoilMoistureSensor:
             # mac os / linux
             return val[0:20]
 
+    # chiede all'utente quanti dati vuole raccogliere dai sensori
     def NumberOfData(self):
         while 1:
             n = input(
@@ -136,6 +141,7 @@ class SoilMoistureSensor:
             except:
                 print("\nInserisci un valore numerico intero")
 
+    # ritorna un array con i sensori usati dal dispositivo
     def SenAvailable(self):
         if (DEBUG == 1):
             return [0, 1, 2, 3, 4, 5]
@@ -159,6 +165,7 @@ class SoilMoistureSensor:
                         "\nValore non corretto\nOppure hai inserito il valore dello stesso sensore più di una volta")
         return rSens
 
+    # legge dalla seriale dell'arduino i valori che questo vi ci scrive
     def ReadArduinoData(self, inst, nSens, n):
         inst.open()
         data = []
@@ -183,13 +190,3 @@ class SoilMoistureSensor:
 
         inst.close()
         return data
-
-    # nSens ---> len(sensToRead)
-    def RandomValue(self, nSens):
-        # generate some integers
-        value = random.randint(196, 516, size=(nSens))
-        value = value.tolist()
-
-        print(value)
-        # print(type(value))
-        return value
